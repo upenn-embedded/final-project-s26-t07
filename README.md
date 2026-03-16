@@ -24,7 +24,7 @@ We are building an autonomous assembly-line mocktail mixer which allows users to
 Mocktail and tea prices have been going up in the past few years. It is no longer appealing to buy an 8 dollar peach oolong tea, for example, which is very easy to make. We propose an autonomous drink-maker to solve this problem and save ourselves money. We want a device that we can use at home with minimal maintenance and cost.
 
 ### 3. System Block Diagram
-
+![](files/system.png)   
 ### 4. Design Sketches  
 ![](files/design.png)  
 The critical design features include the linear slide (to move the drink forward) and the solenoid-pump system to dispense the drink. We may need to 3D print a mount for each bottle. We can laser-cut a wooden display interface for drink selection and notification (to place the OLED and buttons in). We will also need to construct an outer frame for the device, which can be done using wood (since the bottles may be too heavy for cardboard).
