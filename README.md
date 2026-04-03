@@ -84,10 +84,13 @@ The device will be set on a flat surface for demonstration. A drink will be sele
 ## Sprint Review #1
 
 ### Last week's progress
+Last week we finalized the BOM and ordered the parts necessary for our project. We also clarified the responsibilties for each of the team members. 
 
 ### Current state of project
+We have finalized the electrical schematic and the setup for our power modulator and touchscreen LED. We are in the process of CAD-designing our turntable.   
 
 ### Next week's plan
+Prototype mechanical design and setup software framework (GFX library, controls, etc.) and begin integration. 
 
 ## Sprint Review #2
 
