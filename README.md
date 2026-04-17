@@ -95,11 +95,11 @@ Prototype mechanical design and setup software framework (GFX library, controls,
 ## Sprint Review #2
 
 ### Last week's progress
-
+We received a lot of our parts (but are still waiting on motors). We updated our schematics and CADs, and are assembling our parts.
 ### Current state of project
-
+The parts that we have are integrated into the circuit. We are working on the GFX library.
 ### Next week's plan
-
+Lasercut the structure, acquire bottles for testing, receive + integrate the rest of the parts.
 ## MVP Demo
 
 ## Final Report
