@@ -102,6 +102,16 @@ The parts that we have are integrated into the circuit. We are working on the GF
 Lasercut the structure, acquire bottles for testing, receive + integrate the rest of the parts.
 ## MVP Demo
 
+### Show a system block diagram & explain the hardware implementation.
+![](files/system_diagram_mvp.png)  
+
+The system consists of a 12V battery supplying a diaphragm pump directly and a 5V buck converter powering the ATmega328PB, touchscreen LCD (SPI), RFID module (SPI), and flow sensor (GPIO interrupt), with the pump driven through a MOSFET. The touchscreen LCD provides both user input and visual output, while the RFID module allows new recipes to be loaded, and the flow sensor provides real-time feedback to the microcontroller for precise volume control. Hardware implementation uses SPI for communication with the LCD and RFID (shared bus with separate chip select lines), a MOSFET for safe high-current pump control, and a closed-loop feedback system where the ATmega turns the pump on/off based on flow sensor pulses.
+
+
+### Explain your firmware implementation, including application logic and critical drivers you've written.
+
+The firmware is structured around a simple state machine that handles user interaction and dispensing logic, with states such as idle, selection, dispensing, and completion. The application reads touch input from the LCD and RFID data to determine the selected recipe, then activates the pump via a GPIO-controlled MOSFET while counting pulses from the flow sensor using an interrupt to precisely measure dispensed volume and stop at the target. Critical drivers include SPI communication for the touchscreen LCD and RFID module, an interrupt-based flow sensor driver for accurate pulse counting, and GPIO control for the pump and any motor drivers.
+
 ### Have you achieved some or all of your Software Requirements Specification (SRS)?
 SRS-01: We have made slight adjustments to this specification, as instead of load cells, we are using fluid sensors to determine whehter sufficient liquid remains for dispensing. We have a working fluid sensor that can detect the volume of liquid passing through pulse calculations, and we plan on scaling this to 4 tube systems.
 
