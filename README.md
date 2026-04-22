@@ -102,6 +102,48 @@ The parts that we have are integrated into the circuit. We are working on the GF
 Lasercut the structure, acquire bottles for testing, receive + integrate the rest of the parts.
 ## MVP Demo
 
+### Show a system block diagram & explain the hardware implementation.
+![](files/system_diagram_mvp.png)  
+
+The system consists of a 12V battery supplying a diaphragm pump directly and a 5V buck converter powering the ATmega328PB, touchscreen LCD (SPI), RFID module (SPI), and flow sensor (GPIO interrupt), with the pump driven through a MOSFET. The touchscreen LCD provides both user input and visual output, while the RFID module allows new recipes to be loaded, and the flow sensor provides real-time feedback to the microcontroller for precise volume control. Hardware implementation uses SPI for communication with the LCD and RFID (shared bus with separate chip select lines), a MOSFET for safe high-current pump control, and a closed-loop feedback system where the ATmega turns the pump on/off based on flow sensor pulses.
+
+
+### Explain your firmware implementation, including application logic and critical drivers you've written.
+
+The firmware is structured around a simple state machine that handles user interaction and dispensing logic, with states such as idle, selection, dispensing, and completion. The application reads touch input from the LCD and RFID data to determine the selected recipe, then activates the pump via a GPIO-controlled MOSFET while counting pulses from the flow sensor using an interrupt to precisely measure dispensed volume and stop at the target. Critical drivers include SPI communication for the touchscreen LCD and RFID module, an interrupt-based flow sensor driver for accurate pulse counting, and GPIO control for the pump and any motor drivers.
+
+### Have you achieved some or all of your Software Requirements Specification (SRS)?
+SRS-01: We have made slight adjustments to this specification, as instead of load cells, we are using fluid sensors to determine whehter sufficient liquid remains for dispensing. We have a working fluid sensor that can detect the volume of liquid passing through pulse calculations, and we plan on scaling this to 4 tube systems.
+
+SRS-02/06: We are in the process of finishing up the Graphics library for the OLED screen, so we have not completed the drink selection interface yet. 
+
+SRS-03/05: We are in the process of finishing our cup detection mechanism. 
+
+SRS-04: We have a pump and fluid sensor system integrated together, and we plan on scaling to 4 tube systems. 
+
+### Have you achieved some or all of your Hardware Requirements Specification (HRS)?
+HRS-01: We are in the process of finishing up the Graphics library for the OLED screen, so we have not completed the display yet, however, we have integrated the hardware and circuity for the OLED screen into our system already. 
+
+HRS-02: We are now using a rotational motion mechanism, a lazy Susan of sorts, to move the cup between dispensing stations. This is complete, apart from a couple screws and standoffs for stability. 
+
+HRS-03: We have finished making the rotating platform and integrated the motor. 
+
+HRS-04: We have finished the pump and fluid sensor assembly for 1 bottle, and we will scale to 4 this week. 
+
+HRS-05: We have finished the outer frame. 
+
+### What is the riskiest part remaining of your project?
+
+The riskiest part remaining of our project is probably the controls in terms of dispensing and pump activation to the specific volume, as well as the I2C communication between the drink selection on the OLED screen to the dispenser. 
+
+### How do you plan to de-risk this?
+
+The priority is to divide the remaining software requirements into modular subsystems so that integration is simplified, and interdependencies are minimized. For instance, using a different clock for the motor and the fluid sensor.   
+
+### What questions or help do you need from the teaching team?
+We anticipate needing some guidance in terms of some of our stretch goals within the scope of the week we have left for the project, specifically the RFID integration, so if we foresee limitations, we plan on reaching out to Andrea to communicate them and ask about advice. 
+
+
 ## Final Report
 
 Don't forget to make the GitHub pages public website!
