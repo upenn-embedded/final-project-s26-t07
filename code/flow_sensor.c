@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include "uart.h"
 
-#define TURNTABLE_MOTOR_STEP PD4
-#define TURNTABLE_MOTOR_DIR  PD2
+#define TURNTABLE_MOTOR_STEP PD5
+#define TURNTABLE_MOTOR_DIR  PD4
 #define PUMP                 PD3
 #define WATER_FLOW_SENSOR    PD5
 
