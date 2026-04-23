@@ -75,7 +75,7 @@ void pump_off(void) {
 // goal: dispense x amt of water
 int main(void) {
     initialize();
-//    run_motor(2000);
+   run_motor(2000);
     _delay_ms(500);
     run_pump(5000);
 //    pump_on();
