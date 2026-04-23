@@ -7,21 +7,21 @@
 #define TURNTABLE_MOTOR_STEP   PD5
 #define TURNTABLE_MOTOR_DIR    PD4
 #define PUMP                   PD3
-#define WATER_FLOW_SENSOR    PD5
+//#define WATER_FLOW_SENSOR    PD5
 
-volatile uint32_t pulse_count = 0;
+//volatile uint32_t pulse_count = 0;
 
-
-ISR(PCINT2_vect) {
-    static uint8_t last_state = 0;
-    uint8_t current_state = (PIND & (1 << WATER_FLOW_SENSOR)) ? 1 : 0;
-
-    if (current_state && !last_state) {
-        pulse_count++;
-    }
-
-    last_state = current_state;
-}
+//
+//ISR(PCINT2_vect) {
+//    static uint8_t last_state = 0;
+//    uint8_t current_state = (PIND & (1 << WATER_FLOW_SENSOR)) ? 1 : 0;
+//
+//    if (current_state && !last_state) {
+//        pulse_count++;
+//    }
+//
+//    last_state = current_state;
+//}
 
 
 void initialize() {
@@ -38,12 +38,12 @@ void initialize() {
     DDRD |= (1 << PUMP);
     
     // enable pull-up on PD1
-    PORTD |= (1 << WATER_FLOW_SENSOR);
+//    PORTD |= (1 << WATER_FLOW_SENSOR);
 
-    PCICR |= (1 << PCIE2);
-    PCMSK2 |= (1 << PCINT17);
+//    PCICR |= (1 << PCIE2);
+//    PCMSK2 |= (1 << PCINT17);
 
-    sei();
+//    sei();
 
 }
 
@@ -75,7 +75,7 @@ void pump_off(void) {
 // goal: dispense x amt of water
 int main(void) {
     initialize();
-   run_motor(2000);
+    run_motor(2000);
     _delay_ms(500);
     run_pump(5000);
 //    pump_on();
