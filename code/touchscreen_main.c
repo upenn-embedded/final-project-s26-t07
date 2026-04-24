@@ -5,27 +5,21 @@
 #include "tft.h"
 #include "touchscreen.h"
 #include "ui.h"
-
-#define RED 0xF800
-#define BLACK 0x0000
+#include "recipe.h"
 
 
-void clear_screen() {
-    tft_fill_screen(BLACK);
-}
+#define BLACK   0x0000
+#define WHITE   0xFFFF
+#define RED     0xF800
+#define GREEN   0x07E0
+#define BLUE    0x001F
+#define CYAN    0x07FF
+#define YELLOW  0xFFE0
+#define GRAY    0x8410
+#define DARK    0x4208
 
-void test_touchscreen_red_dots() {
-    while(1)
-    {
-        TouchPoint p = touch_get_point();
+Recipe menu_drinks[3];
 
-        if (p.touched) {
-    tft_fill_rect(p.x, p.y, 4, 4, RED);
-    _delay_ms(100);
-    }       
-    }
-    
-}
 
 int main(void)
 {
@@ -33,7 +27,15 @@ int main(void)
     tft_init();
     adc_init();
 
-    clear_screen();
+    menu_drinks[0] = recipe_1;
+    menu_drinks[1] = recipe_2;
+    menu_drinks[2] = recipe_3;
+
+    ui_set_drink_names(
+        menu_drinks[0].name,
+        menu_drinks[1].name,
+        menu_drinks[2].name
+    );
     
     ui_init();
 
@@ -42,5 +44,8 @@ int main(void)
         _delay_ms(100);
     }
 
-
 }
+
+
+
+
