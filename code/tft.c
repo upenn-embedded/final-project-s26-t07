@@ -1,0 +1,383 @@
+#define F_CPU 8000000UL
+#include "tft.h"
+#include <util/delay.h>
+
+#define TFT_CS   PB2
+#define TFT_DC   PB1
+#define TFT_RST  PB0
+
+#define CS_LOW()    (PORTB &= ~(1 << TFT_CS))
+#define CS_HIGH()   (PORTB |=  (1 << TFT_CS))
+
+#define DC_LOW()    (PORTB &= ~(1 << TFT_DC))
+#define DC_HIGH()   (PORTB |=  (1 << TFT_DC))
+
+#define RST_LOW()   (PORTB &= ~(1 << TFT_RST))
+#define RST_HIGH()  (PORTB |=  (1 << TFT_RST))
+
+
+//command defines 
+#define HX8357_SWRESET   0x01
+#define HX8357_SLPOUT    0x11
+#define HX8357_COLMOD    0x3A
+#define HX8357_MADCTL    0x36
+#define HX8357_DISPON    0x29
+#define HX8357_CASET     0x2A
+#define HX8357_PASET     0x2B
+#define HX8357_RAMWR     0x2C
+
+
+//ASCII
+static const uint8_t font5x7[][5] = {
+    {0x00,0x00,0x00,0x00,0x00}, // 32 space
+    {0x00,0x00,0x5F,0x00,0x00}, // 33 !
+    {0x00,0x07,0x00,0x07,0x00}, // 34 "
+    {0x14,0x7F,0x14,0x7F,0x14}, // 35 #
+    {0x24,0x2A,0x7F,0x2A,0x12}, // 36 $
+    {0x23,0x13,0x08,0x64,0x62}, // 37 %
+    {0x36,0x49,0x55,0x22,0x50}, // 38 &
+    {0x00,0x05,0x03,0x00,0x00}, // 39 '
+    {0x00,0x1C,0x22,0x41,0x00}, // 40 (
+    {0x00,0x41,0x22,0x1C,0x00}, // 41 )
+    {0x14,0x08,0x3E,0x08,0x14}, // 42 *
+    {0x08,0x08,0x3E,0x08,0x08}, // 43 +
+    {0x00,0x50,0x30,0x00,0x00}, // 44 ,
+    {0x08,0x08,0x08,0x08,0x08}, // 45 -
+    {0x00,0x60,0x60,0x00,0x00}, // 46 .
+    {0x20,0x10,0x08,0x04,0x02}, // 47 /
+    {0x3E,0x51,0x49,0x45,0x3E}, // 48 0
+    {0x00,0x42,0x7F,0x40,0x00}, // 49 1
+    {0x42,0x61,0x51,0x49,0x46}, // 50 2
+    {0x21,0x41,0x45,0x4B,0x31}, // 51 3
+    {0x18,0x14,0x12,0x7F,0x10}, // 52 4
+    {0x27,0x45,0x45,0x45,0x39}, // 53 5
+    {0x3C,0x4A,0x49,0x49,0x30}, // 54 6
+    {0x01,0x71,0x09,0x05,0x03}, // 55 7
+    {0x36,0x49,0x49,0x49,0x36}, // 56 8
+    {0x06,0x49,0x49,0x29,0x1E}, // 57 9
+    {0x00,0x36,0x36,0x00,0x00}, // 58 :
+    {0x00,0x56,0x36,0x00,0x00}, // 59 ;
+    {0x08,0x14,0x22,0x41,0x00}, // 60 <
+    {0x14,0x14,0x14,0x14,0x14}, // 61 =
+    {0x00,0x41,0x22,0x14,0x08}, // 62 >
+    {0x02,0x01,0x51,0x09,0x06}, // 63 ?
+    {0x32,0x49,0x79,0x41,0x3E}, // 64 @
+    {0x7E,0x11,0x11,0x11,0x7E}, // 65 A
+    {0x7F,0x49,0x49,0x49,0x36}, // 66 B
+    {0x3E,0x41,0x41,0x41,0x22}, // 67 C
+    {0x7F,0x41,0x41,0x22,0x1C}, // 68 D
+    {0x7F,0x49,0x49,0x49,0x41}, // 69 E
+    {0x7F,0x09,0x09,0x09,0x01}, // 70 F
+    {0x3E,0x41,0x49,0x49,0x7A}, // 71 G
+    {0x7F,0x08,0x08,0x08,0x7F}, // 72 H
+    {0x00,0x41,0x7F,0x41,0x00}, // 73 I
+    {0x20,0x40,0x41,0x3F,0x01}, // 74 J
+    {0x7F,0x08,0x14,0x22,0x41}, // 75 K
+    {0x7F,0x40,0x40,0x40,0x40}, // 76 L
+    {0x7F,0x02,0x0C,0x02,0x7F}, // 77 M
+    {0x7F,0x04,0x08,0x10,0x7F}, // 78 N
+    {0x3E,0x41,0x41,0x41,0x3E}, // 79 O
+    {0x7F,0x09,0x09,0x09,0x06}, // 80 P
+    {0x3E,0x41,0x51,0x21,0x5E}, // 81 Q
+    {0x7F,0x09,0x19,0x29,0x46}, // 82 R
+    {0x46,0x49,0x49,0x49,0x31}, // 83 S
+    {0x01,0x01,0x7F,0x01,0x01}, // 84 T
+    {0x3F,0x40,0x40,0x40,0x3F}, // 85 U
+    {0x1F,0x20,0x40,0x20,0x1F}, // 86 V
+    {0x3F,0x40,0x38,0x40,0x3F}, // 87 W
+    {0x63,0x14,0x08,0x14,0x63}, // 88 X
+    {0x07,0x08,0x70,0x08,0x07}, // 89 Y
+    {0x61,0x51,0x49,0x45,0x43}, // 90 Z
+    {0x00,0x7F,0x41,0x41,0x00}, // 91 [
+    {0x02,0x04,0x08,0x10,0x20}, // 92 backslash
+    {0x00,0x41,0x41,0x7F,0x00}, // 93 ]
+    {0x04,0x02,0x01,0x02,0x04}, // 94 ^
+    {0x40,0x40,0x40,0x40,0x40}, // 95 _
+    {0x00,0x01,0x02,0x04,0x00}, // 96 `
+    {0x20,0x54,0x54,0x54,0x78}, // 97 a
+    {0x7F,0x48,0x44,0x44,0x38}, // 98 b
+    {0x38,0x44,0x44,0x44,0x20}, // 99 c
+    {0x38,0x44,0x44,0x48,0x7F}, // 100 d
+    {0x38,0x54,0x54,0x54,0x18}, // 101 e
+    {0x08,0x7E,0x09,0x01,0x02}, // 102 f
+    {0x0C,0x52,0x52,0x52,0x3E}, // 103 g
+    {0x7F,0x08,0x04,0x04,0x78}, // 104 h
+    {0x00,0x44,0x7D,0x40,0x00}, // 105 i
+    {0x20,0x40,0x44,0x3D,0x00}, // 106 j
+    {0x7F,0x10,0x28,0x44,0x00}, // 107 k
+    {0x00,0x41,0x7F,0x40,0x00}, // 108 l
+    {0x7C,0x04,0x18,0x04,0x78}, // 109 m
+    {0x7C,0x08,0x04,0x04,0x78}, // 110 n
+    {0x38,0x44,0x44,0x44,0x38}, // 111 o
+    {0x7C,0x14,0x14,0x14,0x08}, // 112 p
+    {0x08,0x14,0x14,0x18,0x7C}, // 113 q
+    {0x7C,0x08,0x04,0x04,0x08}, // 114 r
+    {0x48,0x54,0x54,0x54,0x20}, // 115 s
+    {0x04,0x3F,0x44,0x40,0x20}, // 116 t
+    {0x3C,0x40,0x40,0x20,0x7C}, // 117 u
+    {0x1C,0x20,0x40,0x20,0x1C}, // 118 v
+    {0x3C,0x40,0x30,0x40,0x3C}, // 119 w
+    {0x44,0x28,0x10,0x28,0x44}, // 120 x
+    {0x0C,0x50,0x50,0x50,0x3C}, // 121 y
+    {0x44,0x64,0x54,0x4C,0x44}, // 122 z
+    {0x00,0x08,0x36,0x41,0x00}, // 123 {
+    {0x00,0x00,0x7F,0x00,0x00}, // 124 |
+    {0x00,0x41,0x36,0x08,0x00}, // 125 }
+    {0x08,0x08,0x2A,0x1C,0x08}  // 126 ~
+};
+
+void spi_init(void) {
+    DDRB |= (1 << PB5) | (1 << PB3) | (1 << PB2) | (1 << PB1) | (1 << PB0);
+    DDRB &= ~(1 << PB4);
+
+    CS_HIGH();
+    DC_HIGH();
+    RST_HIGH();
+
+    SPCR0 = (1 << SPE) | (1 << MSTR) | (1 << SPR0);
+    SPSR0 = 0;
+    
+}
+
+static void spi_write(uint8_t data) {
+    SPDR0 = data;
+    while (!(SPSR0 & (1 << SPIF)));
+    
+}
+
+static void tft_write_command_data(uint8_t cmd, const uint8_t *data, uint8_t len) {
+    CS_LOW();
+
+    DC_LOW();
+    spi_write(cmd);
+
+    if (len > 0) {
+        DC_HIGH();
+        for (uint8_t i = 0; i < len; i++) {
+            spi_write(data[i]);
+        }
+    }
+
+    CS_HIGH();
+}
+
+void tft_write_command(uint8_t cmd) {
+    CS_LOW();
+    DC_LOW();
+    spi_write(cmd);
+    CS_HIGH();
+}
+
+void tft_write_data(uint8_t data) {
+    CS_LOW();
+    DC_HIGH();
+    spi_write(data);
+    CS_HIGH();
+}
+
+void tft_write_data16(uint16_t data) {
+    CS_LOW();
+    DC_HIGH();
+    spi_write(data >> 8);
+    spi_write(data & 0xFF);
+    CS_HIGH();
+}
+
+void tft_reset(void) {
+    RST_HIGH();
+    _delay_ms(5);
+    RST_LOW();
+    _delay_ms(20);
+    RST_HIGH();
+    _delay_ms(150);
+}
+
+void tft_init(void) {
+    static const uint8_t cmd_b9[] = {0xFF, 0x83, 0x57};
+    static const uint8_t cmd_b3[] = {0x80, 0x00, 0x06, 0x06};
+    static const uint8_t cmd_b6[] = {0x25};
+    static const uint8_t cmd_b1[] = {0x00, 0x15, 0x1C, 0x1C, 0x83, 0xAA};
+    static const uint8_t cmd_c0[] = {0x50, 0x50, 0x01, 0x3C, 0xC8, 0x08};
+    static const uint8_t cmd_cc[] = {0x09};
+    static const uint8_t cmd_3a[] = {0x55};
+    static const uint8_t cmd_36[] = {0xA0};   
+
+    _delay_ms(200);
+    tft_reset();
+    _delay_ms(200);
+
+    tft_write_command(0x01);   // SWRESET
+    _delay_ms(150);
+
+    tft_write_command_data(0xB9, cmd_b9, sizeof(cmd_b9));
+    _delay_ms(10);
+
+    tft_write_command_data(0xB3, cmd_b3, sizeof(cmd_b3));
+    _delay_ms(10);
+
+    tft_write_command_data(0xB6, cmd_b6, sizeof(cmd_b6));
+    _delay_ms(10);
+
+    tft_write_command_data(0xB1, cmd_b1, sizeof(cmd_b1));
+    _delay_ms(10);
+
+    tft_write_command_data(0xC0, cmd_c0, sizeof(cmd_c0));
+    _delay_ms(10);
+
+    tft_write_command_data(0xCC, cmd_cc, sizeof(cmd_cc));
+    _delay_ms(10);
+
+    tft_write_command_data(0x3A, cmd_3a, sizeof(cmd_3a));
+    _delay_ms(10);
+
+    tft_write_command_data(0x36, cmd_36, sizeof(cmd_36));
+    _delay_ms(10);
+
+    tft_write_command(0x11);   // SLPOUT
+    _delay_ms(150);
+
+    tft_write_command(0x13);   // NORON
+    _delay_ms(10);
+
+    tft_write_command(0x29);   // DISPON
+    _delay_ms(50);
+}
+
+void tft_set_addr_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
+    CS_LOW();
+
+    DC_LOW();
+    spi_write(0x2A); // CASET
+    DC_HIGH();
+    spi_write(x0 >> 8);
+    spi_write(x0 & 0xFF);
+    spi_write(x1 >> 8);
+    spi_write(x1 & 0xFF);
+
+    DC_LOW();
+    spi_write(0x2B); // PASET
+    DC_HIGH();
+    spi_write(y0 >> 8);
+    spi_write(y0 & 0xFF);
+    spi_write(y1 >> 8);
+    spi_write(y1 & 0xFF);
+
+    DC_LOW();
+    spi_write(0x2C); // RAMWR
+    DC_HIGH();
+
+    CS_HIGH();
+}
+
+void tft_fill_rect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color) {
+    uint32_t count = (uint32_t)w * (uint32_t)h;
+    uint16_t x1 = x0 + w - 1;
+    uint16_t y1 = y0 + h - 1;
+
+    CS_LOW();
+
+    DC_LOW();
+    spi_write(0x2A); // CASET
+    DC_HIGH();
+    spi_write(x0 >> 8);
+    spi_write(x0 & 0xFF);
+    spi_write(x1 >> 8);
+    spi_write(x1 & 0xFF);
+
+    DC_LOW();
+    spi_write(0x2B); // PASET
+    DC_HIGH();
+    spi_write(y0 >> 8);
+    spi_write(y0 & 0xFF);
+    spi_write(y1 >> 8);
+    spi_write(y1 & 0xFF);
+
+    DC_LOW();
+    spi_write(0x2C); // RAMWR
+    DC_HIGH();
+
+    for (uint32_t i = 0; i < count; i++) {
+        spi_write(color >> 8);
+        spi_write(color & 0xFF);
+    }
+
+    CS_HIGH();
+}
+
+void tft_fill_screen(uint16_t color) {
+    tft_fill_rect(0, 0, 320, 480, color);  
+}
+
+void tft_draw_pixel(uint16_t x, uint16_t y, uint16_t color) {
+    tft_fill_rect(x, y, 1, 1, color);
+}
+
+void tft_draw_fast_hline(uint16_t x, uint16_t y, uint16_t w, uint16_t color) {
+    tft_fill_rect(x, y, w, 1, color);
+}
+
+void tft_draw_fast_vline(uint16_t x, uint16_t y, uint16_t h, uint16_t color) {
+    tft_fill_rect(x, y, 1, h, color);
+}
+
+void tft_draw_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+    if (w == 0 || h == 0) return;
+
+    tft_draw_fast_hline(x, y, w, color);
+    tft_draw_fast_hline(x, y + h - 1, w, color);
+    tft_draw_fast_vline(x, y, h, color);
+    tft_draw_fast_vline(x + w - 1, y, h, color);
+}
+
+void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg, uint8_t size) {
+    if (c < 32 || c > 126) {
+        c = '?';
+    }
+
+    const uint8_t *bitmap = font5x7[c - 32];
+
+    for (uint8_t col = 0; col < 5; col++) {
+        uint8_t line = bitmap[col];
+
+        for (uint8_t row = 0; row < 8; row++) {
+            if (line & 0x01) {
+                if (size == 1) {
+                    tft_draw_pixel(x + col, y + row, color);
+                } else {
+                    tft_fill_rect(x + col * size, y + row * size, size, size, color);
+                }
+            } else if (bg != color) {
+                if (size == 1) {
+                    tft_draw_pixel(x + col, y + row, bg);
+                } else {
+                    tft_fill_rect(x + col * size, y + row * size, size, size, bg);
+                }
+            }
+            line >>= 1;
+        }
+    }
+
+    // spacing column after character
+    if (bg != color) {
+        if (size == 1) {
+            tft_fill_rect(x + 5, y, 1, 8, bg);
+        } else {
+            tft_fill_rect(x + 5 * size, y, size, 8 * size, bg);
+        }
+    }
+}
+
+void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg, uint8_t size) {
+    while (*str) {
+        if (*str == '\n') {
+            y += 8 * size;
+            x = 0;
+        } else if (*str == '\r') {
+            // ignore carriage return
+        } else {
+            tft_draw_char(x, y, *str, color, bg, size);
+            x += 6 * size;
+        }
+        str++;
+    }
+}
