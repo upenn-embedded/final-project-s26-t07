@@ -1,4 +1,4 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/-Acvnhrq)
+
 # Final Project
 
 **Team Number:** 7
@@ -13,7 +13,7 @@
 
 **GitHub Repository URL:** https://github.com/upenn-embedded/final-project-s26-t07
 
-**GitHub Pages Website URL:** [for final submission]*
+**GitHub Pages Website URL:** https://upenn-embedded.github.io/final-project-s26-t07/
 
 ## Final Project Proposal
 
