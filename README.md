@@ -157,18 +157,47 @@ If you’ve never made a GitHub pages website before, you can follow this webpag
 
 #### 3.1 Software Requirements Specification (SRS) Results
 
-| ID     | Description                                                                                               | Validation Outcome                                                                          |
-| ------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| SRS-01 | The IMU 3-axis acceleration will be measured with 16-bit depth every 100 milliseconds +/-10 milliseconds. | Confirmed, logged output from the MCU is saved to "validation" folder in GitHub repository. |
+Note: RFID recipe loading was removed from the final system design and is not included in the final validated requirements. Drink recipes are selected through the touchscreen interface using pre-programmed recipes stored in firmware.
+
+| ID | Description | Validation Outcome |
+|------|-------------|----------------|
+| SRS-01 | The system shall measure flow sensor pulse data during dispensing to determine whether the programmed liquid volume has been delivered for each ingredient. | Confirmed, dispensed volume was validated using calibrated pulse counts and flow sensor output captures, though minor volumetric deviations were observed due to flow variability. |
+| SRS-02 | The system shall allow the user to select from available drink options using the touchscreen interface and display the selected option on the LCD within 1 second of input. | Confirmed, touchscreen responsiveness was demonstrated in video and verified by timing user input to display update. |
+| SRS-03 | The system shall verify that the cup is positioned at the correct dispensing station before beginning each dispense stage of the drink-making sequence. | Confirmed, turntable indexing and cup positioning were demonstrated in validation videos showing correct station alignment prior to dispensing. |
+| SRS-04 | At each dispensing station, the system shall activate the corresponding pump for the programmed dispense volume associated with the selected drink recipe. | Partially achieved, recipe sequencing and multi-ingredient dispensing were demonstrated successfully, though occasional dispensing inaccuracies and timing inconsistencies introduced small recipe composition errors. |
+| SRS-05 | The system shall stop the drink-making process and display an error message if a dispensing fault, positioning fault, or invalid operating condition is detected during any stage of operation. | Confirmed, fault handling was validated through induced error cases and demonstrated through LCD error messaging. |
+| SRS-06 | After the selected drink has been completed, the system shall display a completion message to the user within 2 seconds. | Confirmed, completion message timing was verified through recorded demonstrations and LCD output. |
+
 
 #### 3.2 Hardware Requirements Specification (HRS) Results
 
-| ID     | Description                                                                                                                        | Validation Outcome                                                                                                      |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| HRS-01 | A distance sensor shall be used for obstacle detection. The sensor shall detect obstacles at a maximum distance of at least 10 cm. | Confirmed, sensed obstacles up to 15cm. Video in "validation" folder, shows tape measure and logged output to terminal. |
-|        |                                                                                                                                    |                                                                                                                         |
+| ID | Description | Validation Outcome |
+|------|-------------|----------------|
+| HRS-01 | A touchscreen LCD shall be used to present drink options, status updates, and dispensing notifications to the user. The display shall support graphical output and touch input for recipe selection. | Confirmed, LCD graphics and touch functionality were demonstrated in system operation videos. |
+| HRS-02 | A rotational motion mechanism shall be used to move the cup between dispensing stations. The mechanism shall provide sufficient angular positioning accuracy to align the cup beneath each ingredient outlet. | Confirmed, turntable positioning accuracy was validated through repeated dispensing alignment tests. |
+| HRS-03 | A motor shall be used to drive the rotational platform and shall provide sufficient torque to move a filled cup reliably through all dispensing stages. | Partially achieved, the motor successfully drove the turntable during demonstrations, though intermittent driver overheating introduced reliability limitations during extended operation. |
+| HRS-04 | A diaphragm pump and flow sensor assembly shall be used for each ingredient bottle to control and monitor liquid dispensing. | Confirmed, pump-flow sensor subsystem performance was validated through flow measurements and dispensing demonstrations, with minor calibration variability observed. |
+| HRS-05 | The outer frame shall be constructed from a rigid material capable of supporting the bottles, pumps, tubing, electronics, and rotational motion system during operation. | Confirmed, mechanical frame integrity was demonstrated during integrated system testing with no structural failures observed. |
+| HRS-06 | A regulated power and switching subsystem, including MOSFET-based pump drivers, shall be used to safely provide power and control for the microcontroller, sensors, display, and actuators. | Partially achieved, switching and power delivery functioned as intended, though motor driver thermal issues indicated areas for improvement in sustained power handling. |
+
 
 ### 4. Conclusion
+
+This project taught us a great deal about embedded system design, particularly the challenge of integrating mechanical, electrical, and software subsystems into a functioning real-time system. We learned that designing individual subsystems is often much easier than making them work together reliably, and that debugging integration issues can take significantly more time than expected. We also gained experience in practical topics such as sensor calibration, closed-loop control using feedback, MOSFET-based actuator driving, SPI peripheral integration, and power management for mixed-voltage systems.
+
+Several aspects of the project went well. One major success was our ability to adapt the specifications to better fit the realities of implementation, particularly pivoting from a linear slide architecture to a rotational dispensing platform, which simplified mechanical complexity while still satisfying the project goals. Our modular subsystem approach also worked well, allowing us to independently develop the touchscreen interface, pump-flow sensor control, and turntable mechanism before integrating them. We were also able to demonstrate a complete autonomous dispensing sequence, which was a major milestone.
+
+We are particularly proud of building a fully functioning automated drink dispensing prototype from the ground up and getting multiple subsystems—touchscreen UI, flow-controlled pumps, turntable positioning, and embedded control firmware—to operate together. We are also proud of working through several design pivots rather than forcing the original concept when it was no longer optimal. The project moved beyond a proof-of-concept into a true integrated electromechanical system.
+
+From this experience, we gained a much stronger appreciation for system-level engineering and iterative prototyping. We learned that successful embedded design is often less about the first design being correct and more about rapidly identifying constraints, adjusting requirements, and improving the design through iteration. We also gained valuable experience with debugging at both the hardware and firmware level, especially in dealing with timing, calibration, and noisy real-world signals.
+
+We did have to change our approach several times. Early on, we realized integration introduced issues that were not obvious when testing subsystems independently, which forced us to redesign portions of both the mechanics and controls. We changed both the motion subsystem and parts of the sensing approach, and we shifted focus from adding features to prioritizing robustness of the core functionality.
+
+In hindsight, some things could have been done differently. More time spent on subsystem interface planning and early integration testing would have likely reduced late-stage debugging. We also could have prioritized power architecture and driver thermal considerations much earlier, since these became significant bottlenecks later in the project. More extensive calibration testing earlier in development would also have improved dispensing accuracy.
+
+We did encounter obstacles we did not anticipate, especially around power management, which took significantly longer than expected. Managing multiple loads, protecting switching circuits, handling motor driver overheating, and ensuring stable operation under varying loads turned out to be much more challenging than initially assumed. Integration issues between mechanical motion and dispensing control also created challenges we had not fully predicted.
+
+A natural next step for this project would be improving calibration and dispensing accuracy so recipes can be reproduced more consistently. Additional work could include closed-loop control improvements, more robust motor driving hardware, and expanding the recipe system through RFID or another dynamic recipe-loading method. Beyond that, scaling to a more polished and reliable consumer-facing prototype with improved mechanical packaging and expanded drink customization would be an exciting continuation of the project.
 
 
 ## References
