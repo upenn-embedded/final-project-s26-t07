@@ -152,7 +152,7 @@ If you’ve never made a GitHub pages website before, you can follow this webpag
 ### 1. Video
 
 Link to video: 
-[https://drive.google.com/drive/folders/11OhObthIH71R5AcxTTE_oFgpsOQUX6Sp?usp=sharing](https://drive.google.com/drive/folders/11OhObthIH71R5AcxTTE_oFgpsOQUX6Sp?usp=sharing)
+[https://drive.google.com/drive/folders/1_ToFds5af0HQXXyNvEpmBM6VgKPU_a95?usp=sharing](https://drive.google.com/drive/folders/1_ToFds5af0HQXXyNvEpmBM6VgKPU_a95?usp=sharing)
 
 ### 2. Images
 

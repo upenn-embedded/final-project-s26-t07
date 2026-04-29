@@ -30,12 +30,12 @@ void initialize() {
     DDRD |= (1 << TURNTABLE_MOTOR_SLEEP);
 
     // preload output LOW first
-    //    PORTD &= ~((1 << PUMP1) | (1 << PUMP2));
-    //    PORTC &= ~((1 << PUMP3) | (1 << PUMP4));
-
-    // then make pins outputs
-    //    DDRD |= (1 << PUMP1) | (1 << PUMP2);
-    //    DDRC |= (1 << PUMP3) | (1 << PUMP4);
+//        PORTD &= ~((1 << PUMP1) | (1 << PUMP2));
+//        PORTC &= ~((1 << PUMP3) | (1 << PUMP4));
+//
+//    // then make pins outputs
+//        DDRD |= (1 << PUMP1) | (1 << PUMP2);
+//        DDRC |= (1 << PUMP3) | (1 << PUMP4);
 
     //    // set motor dir
     PORTD |= (1 << TURNTABLE_MOTOR_DIR);
@@ -61,6 +61,11 @@ int main(void) {
     initialize();
     //    while (1`
     //    run_motor(2000);
+//    PORTD &= ~(1 << PD2); // turning motor sleep on
+    // pump 4 on
+//    PORTD |= (1 << PUMP4);
+//    _delay_ms(2000);
+//    PORTD &= ~(1 << PUMP4);
     while (1) {
         PORTD |= (1 << TURNTABLE_MOTOR_STEP);
         _delay_us(5);
