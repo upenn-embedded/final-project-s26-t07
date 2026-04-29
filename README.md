@@ -1,5 +1,5 @@
 
-# Final Project
+# RoboBartender
 
 **Team Number:** 7
 
