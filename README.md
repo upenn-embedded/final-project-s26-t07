@@ -156,6 +156,14 @@ Link to video:
 
 ### 2. Images
 
+![](files/small.png)  
+
+![](files/IMG_9923.jpg)  
+
+![](files/IMG_9921.jpg)  
+
+![](files/IMG_9922.jpg)  
+
 
 
 ### 3. Results
