@@ -3,7 +3,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdint.h>
-#include <string.h>
+#include <stddef.h>
 
 #include "tft.h"
 #include "touchscreen.h"
@@ -43,22 +43,30 @@ typedef struct {
 static Screen current_screen = SCREEN_HOME;
 static Drink selected_drink = DRINK_NONE;
 
-static Button drink_one_btn    = {40, 80, 170, 60, "DRINK 1"};
-static Button drink_two_btn = {270, 80, 170, 60, "DRINK 2"};
-static Button drink_three_btn      = {40, 170, 170, 60, "DRINK 3"};
-static Button next_btn      = {270, 170, 170, 60, "NEXT"};
+// Generic drink names for now
+static const char *drink_one_name = "DRINK 1";
+static const char *drink_two_name = "DRINK 2";
+static const char *drink_three_name = "DRINK 3";
 
-static Button start_btn     = {80, 210, 150, 60, "START"};
-static Button back_btn      = {260, 210, 150, 60, "BACK"};
+// Home screen buttons
+static Button drink_one_btn   = {40, 80, 170, 60, NULL};
+static Button drink_two_btn   = {270, 80, 170, 60, NULL};
+static Button drink_three_btn = {40, 170, 170, 60, NULL};
+static Button next_btn        = {270, 170, 170, 60, "NEXT"};
 
-static Button pause_btn     = {80, 220, 150, 60, "PAUSE"};
-static Button cancel_btn    = {260, 220, 150, 60, "CANCEL"};
+// Confirmation screen buttons
+static Button start_btn = {80, 210, 150, 60, "START"};
+static Button back_btn  = {260, 210, 150, 60, "BACK"};
+
+// Dispense screen buttons
+static Button pause_btn  = {80, 220, 150, 60, "PAUSE"};
+static Button cancel_btn = {260, 220, 150, 60, "CANCEL"};
 
 static const char* drink_name(Drink d) {
     switch (d) {
-        case DRINK_ONE: return "DRINK 1";
-        case DRINK_TWO: return "DRINK 2";
-        case DRINK_THREE: return "DRINK 3";
+        case DRINK_ONE: return drink_one_name;
+        case DRINK_TWO: return drink_two_name;
+        case DRINK_THREE: return drink_three_name;
         default: return "NONE";
     }
 }
@@ -87,14 +95,13 @@ static void draw_drink_button(Button b, Drink d) {
     }
 }
 
-
-void ui_draw_home_components(void) {
+static void ui_draw_home_components(void) {
     tft_draw_string(90, 25, "SELECT DRINK", WHITE, BLACK, 3);
 
     draw_drink_button(drink_one_btn, DRINK_ONE);
     draw_drink_button(drink_two_btn, DRINK_TWO);
     draw_drink_button(drink_three_btn, DRINK_THREE);
-    
+
     if (selected_drink == DRINK_NONE) {
         draw_button(next_btn, GRAY, WHITE);
     } else {
@@ -102,25 +109,27 @@ void ui_draw_home_components(void) {
     }
 }
 
+void ui_set_drink_names(
+    const char *name_1,
+    const char *name_2,
+    const char *name_3
+){
+    drink_one_name = name_1;
+    drink_two_name = name_2;
+    drink_three_name = name_3;
+
+    drink_one_btn.label = drink_one_name;
+    drink_two_btn.label = drink_two_name;
+    drink_three_btn.label = drink_three_name;
+
+    if(current_screen == SCREEN_HOME){
+        ui_draw_home();
+    }
+}
 
 void ui_draw_home(void) {
     tft_fill_screen(BLACK);
-    
     ui_draw_home_components();
-}
-
-void ui_update_home(void) {
-    tft_draw_string(90, 25, "SELECT DRINK", WHITE, BLACK, 3);
-
-    draw_drink_button(drink_one_btn, DRINK_ONE);
-    draw_drink_button(drink_two_btn, DRINK_TWO);
-    draw_drink_button(drink_three_btn, DRINK_THREE);
-    
-    if (selected_drink == DRINK_NONE) {
-        draw_button(next_btn, GRAY, WHITE);
-    } else {
-        draw_button(next_btn, YELLOW, BLACK);
-    }
 }
 
 void ui_draw_confirm(void) {
@@ -140,7 +149,6 @@ void ui_draw_dispense(void) {
     tft_draw_string(70, 35, "DISPENSING", WHITE, BLACK, 3);
     tft_draw_string(100, 105, drink_name(selected_drink), CYAN, BLACK, 2);
 
-    // simple progress bar outline
     tft_draw_rect(70, 160, 340, 30, WHITE);
     tft_fill_rect(75, 165, 100, 20, GREEN); // placeholder progress
 
@@ -151,6 +159,11 @@ void ui_draw_dispense(void) {
 void ui_init(void) {
     current_screen = SCREEN_HOME;
     selected_drink = DRINK_NONE;
+
+    drink_one_btn.label = drink_one_name;
+    drink_two_btn.label = drink_two_name;
+    drink_three_btn.label = drink_three_name;
+
     ui_draw_home();
 }
 
@@ -164,17 +177,17 @@ void ui_update(void) {
     if (current_screen == SCREEN_HOME) {
         if (button_hit(drink_one_btn, p)) {
             selected_drink = DRINK_ONE;
-            ui_update_home();
-            
-        } else if (button_hit(drink_two_btn, p)) {
+            ui_draw_home();
+        } 
+        else if (button_hit(drink_two_btn, p)) {
             selected_drink = DRINK_TWO;
-            ui_update_home();
-            
-        } else if (button_hit(drink_three_btn, p)) {
+            ui_draw_home();
+        } 
+        else if (button_hit(drink_three_btn, p)) {
             selected_drink = DRINK_THREE;
-            ui_update_home();
-            
-        } else if (button_hit(next_btn, p) && selected_drink != DRINK_NONE) {
+            ui_draw_home();
+        } 
+        else if (button_hit(next_btn, p) && selected_drink != DRINK_NONE) {
             current_screen = SCREEN_CONFIRM;
             ui_draw_confirm();
         }
@@ -185,8 +198,9 @@ void ui_update(void) {
             current_screen = SCREEN_DISPENSE;
             ui_draw_dispense();
 
-            // later: call start_dispense(selected_drink);
-        } else if (button_hit(back_btn, p)) {
+            // later: start_dispense(selected_drink);
+        } 
+        else if (button_hit(back_btn, p)) {
             current_screen = SCREEN_HOME;
             ui_draw_home();
         }
@@ -194,15 +208,16 @@ void ui_update(void) {
 
     else if (current_screen == SCREEN_DISPENSE) {
         if (button_hit(pause_btn, p)) {
-            // later: call pause_dispense();
+            // later: pause_dispense();
             draw_button(pause_btn, BLUE, WHITE);
-        } else if (button_hit(cancel_btn, p)) {
-            // later: call cancel_dispense();
+        } 
+        else if (button_hit(cancel_btn, p)) {
+            // later: cancel_dispense();
             current_screen = SCREEN_HOME;
             selected_drink = DRINK_NONE;
             ui_draw_home();
         }
     }
 
-    _delay_ms(250); // debounce delay
+    _delay_ms(30);
 }
