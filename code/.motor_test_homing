@@ -1,0 +1,288 @@
+#define F_CPU 16000000UL
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define BAUD 9600
+#define MYUBRR ((F_CPU / 16 / BAUD) - 1)
+
+// Stepper motor pins
+#define TURNTABLE_MOTOR_STEP   PD5
+#define TURNTABLE_MOTOR_DIR    PD4
+#define TURNTABLE_MOTOR_SLEEP  PD3
+
+// Pump MOSFET pins
+#define PUMP2                  PB0
+#define PUMP3                  PD2
+
+// Hall sensor
+#define HALL_CHANNEL           0
+#define HALL_THRESHOLD         100
+
+// Flow sensors
+#define FLOW2                  PD7
+#define FLOW3                  PD6
+
+#define ML_PER_PULSE           0.66
+
+#define NUM_PUMPS              4
+#define STEPS_PER_PUMP         417
+
+int current_position = 0;
+
+volatile uint32_t flow_pulses_2 = 0;
+volatile uint32_t flow_pulses_3 = 0;
+
+void UART_init(unsigned int ubrr) {
+    UBRR0H = (unsigned char)(ubrr >> 8);
+    UBRR0L = (unsigned char)ubrr;
+    UCSR0B = (1 << TXEN0);
+    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+}
+
+void UART_sendChar(char c) {
+    while (!(UCSR0A & (1 << UDRE0)));
+    UDR0 = c;
+}
+
+void UART_sendString(const char *str) {
+    while (*str) UART_sendChar(*str++);
+}
+
+void UART_sendInt(uint16_t num) {
+    char buffer[10];
+    sprintf(buffer, "%u", num);
+    UART_sendString(buffer);
+}
+
+void ADC_init(void) {
+    ADMUX = (1 << REFS0);
+    ADCSRA = (1 << ADEN) |
+             (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+}
+
+uint16_t ADC_read(uint8_t channel) {
+    ADMUX = (1 << REFS0) | (channel & 0x0F);
+
+    ADCSRA |= (1 << ADSC);
+    while (ADCSRA & (1 << ADSC));
+
+    return ADC;
+}
+
+ISR(PCINT2_vect) {
+    static uint8_t last_flow2 = 1;
+    static uint8_t last_flow3 = 1;
+
+    uint8_t current_flow2 = (PIND & (1 << FLOW2)) ? 1 : 0;
+    uint8_t current_flow3 = (PIND & (1 << FLOW3)) ? 1 : 0;
+
+    if (last_flow2 == 1 && current_flow2 == 0) {
+        flow_pulses_2++;
+    }
+
+    if (last_flow3 == 1 && current_flow3 == 0) {
+        flow_pulses_3++;
+    }
+
+    last_flow2 = current_flow2;
+    last_flow3 = current_flow3;
+}
+
+void initialize(void) {
+    DDRD |= (1 << TURNTABLE_MOTOR_STEP) |
+            (1 << TURNTABLE_MOTOR_DIR) |
+            (1 << TURNTABLE_MOTOR_SLEEP) |
+            (1 << PUMP3);
+
+    DDRB |= (1 << PUMP2);
+
+    DDRC &= ~(1 << PC0);
+    PORTC |= (1 << PC0);
+
+    DDRD &= ~((1 << FLOW2) | (1 << FLOW3));
+    PORTD |= (1 << FLOW2) | (1 << FLOW3);
+
+    PORTD |= (1 << TURNTABLE_MOTOR_SLEEP);
+    PORTD |= (1 << TURNTABLE_MOTOR_DIR);
+    PORTD &= ~(1 << TURNTABLE_MOTOR_STEP);
+
+    PORTB &= ~(1 << PUMP2);
+    PORTD &= ~(1 << PUMP3);
+
+    PCICR |= (1 << PCIE2);
+    PCMSK2 |= (1 << PCINT22) | (1 << PCINT23);
+
+    sei();
+}
+
+void set_direction_clockwise(void) {
+    PORTD |= (1 << TURNTABLE_MOTOR_DIR);
+}
+
+void set_direction_counterclockwise(void) {
+    PORTD &= ~(1 << TURNTABLE_MOTOR_DIR);
+}
+
+void step_motor(void) {
+    PORTD |= (1 << TURNTABLE_MOTOR_STEP);
+    _delay_us(1900);
+    PORTD &= ~(1 << TURNTABLE_MOTOR_STEP);
+    _delay_us(1900);
+}
+
+void move_steps(int steps) {
+    if (steps >= 0) {
+        set_direction_clockwise();
+    } else {
+        set_direction_counterclockwise();
+        steps = -steps;
+    }
+
+    for (int i = 0; i < steps; i++) {
+        step_motor();
+    }
+}
+
+void motor_off(void) {
+    PORTD &= ~(1 << TURNTABLE_MOTOR_STEP);
+}
+
+void home_turntable(void) {
+    UART_sendString("Homing turntable...\r\n");
+
+    set_direction_clockwise();
+
+    while (1) {
+        uint16_t hall_value = ADC_read(HALL_CHANNEL);
+
+        UART_sendString("Hall ADC: ");
+        UART_sendInt(hall_value);
+        UART_sendString("\r\n");
+
+        if (hall_value < HALL_THRESHOLD) {
+            motor_off();
+            current_position = 0;
+            UART_sendString("HOME FOUND: Pump 1 position\r\n");
+            break;
+        }
+
+        step_motor();
+        _delay_ms(5);
+    }
+}
+
+void move_to_pump(int pump_number) {
+    int target_position = pump_number - 1;
+    int step_difference = target_position - current_position;
+
+    if (step_difference > NUM_PUMPS / 2) {
+        step_difference -= NUM_PUMPS;
+    } else if (step_difference < -NUM_PUMPS / 2) {
+        step_difference += NUM_PUMPS;
+    }
+
+    int steps_to_move = step_difference * STEPS_PER_PUMP;
+
+    UART_sendString("Moving to pump ");
+    UART_sendInt(pump_number);
+    UART_sendString(" by ");
+    UART_sendInt(abs(steps_to_move));
+    UART_sendString(" steps\r\n");
+
+    move_steps(steps_to_move);
+
+    current_position = target_position;
+
+    UART_sendString("Arrived at pump ");
+    UART_sendInt(pump_number);
+    UART_sendString("\r\n");
+}
+
+void pump_on(int pump_number) {
+    if (pump_number == 2) {
+        PORTB |= (1 << PUMP2);
+    } else if (pump_number == 3) {
+        PORTD |= (1 << PUMP3);
+    }
+}
+
+void pump_off(int pump_number) {
+    if (pump_number == 2) {
+        PORTB &= ~(1 << PUMP2);
+    } else if (pump_number == 3) {
+        PORTD &= ~(1 << PUMP3);
+    }
+}
+
+void dispense_ml(int pump_number, float amount_ml) {
+    uint32_t target_pulses = (uint32_t)(amount_ml / ML_PER_PULSE);
+
+    if (pump_number == 2) {
+        flow_pulses_2 = 0;
+    } else if (pump_number == 3) {
+        flow_pulses_3 = 0;
+    } else {
+        return;
+    }
+
+    UART_sendString("Dispensing pump ");
+    UART_sendInt(pump_number);
+    UART_sendString(" ");
+    UART_sendInt((uint16_t)amount_ml);
+    UART_sendString(" mL\r\n");
+
+    pump_on(pump_number);
+
+    if (pump_number == 2) {
+        while (flow_pulses_2 < target_pulses) {
+        }
+    } else if (pump_number == 3) {
+        while (flow_pulses_3 < target_pulses) {
+        }
+    }
+
+    pump_off(pump_number);
+
+    UART_sendString("Done.\r\n");
+}
+
+int main(void) {
+    UART_init(MYUBRR);
+    ADC_init();
+    initialize();
+
+    _delay_ms(500);
+
+    home_turntable();
+
+    _delay_ms(1000);
+    move_to_pump(2);
+
+    _delay_ms(1000);
+    move_to_pump(3);
+
+    _delay_ms(1000);
+    move_to_pump(4);
+
+    _delay_ms(1000);
+    move_to_pump(1);
+
+    _delay_ms(1000);
+    move_to_pump(2);
+    dispense_ml(2, 50);
+
+    _delay_ms(1000);
+    move_to_pump(3);
+    dispense_ml(3, 50);
+
+    _delay_ms(1000);
+    move_to_pump(1);
+
+    while (1) {
+    }
+}
+Message Amy Luo, Lori Brown
