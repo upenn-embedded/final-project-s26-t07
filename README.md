@@ -156,7 +156,7 @@ Link to video:
 
 ### 2. Images
 
-![](files/small.jpg)  
+![](files/resized_image.jpg)  
 
 ![](files/IMG_9923.jpg)  
 
